@@ -27,7 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="participants-section">
               <strong>Participantes:</strong>
               <ul class="participants-list">
-                ${details.participants.map(p => `<li>${p}</li>`).join("")}
+                ${details.participants.map(p => `
+                  <li class="participant-item">
+                    <span class="participant-email">${p}</span>
+                    <span class="delete-participant" title="Eliminar" data-activity="${name}" data-email="${p}">&#128465;</span>
+                  </li>
+                `).join("")}
               </ul>
             </div>
           `;
@@ -83,6 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchActivities(); // Actualiza la lista de actividades y participantes
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
@@ -104,4 +110,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize app
   fetchActivities();
+  // Delegación de eventos para eliminar participante
+  activitiesList.addEventListener("click", async (event) => {
+    if (event.target.classList.contains("delete-participant")) {
+      const activity = event.target.getAttribute("data-activity");
+      const email = event.target.getAttribute("data-email");
+      if (confirm(`¿Seguro que deseas eliminar a ${email} de ${activity}?`)) {
+        try {
+          const response = await fetch(`/activities/${encodeURIComponent(activity)}/remove?email=${encodeURIComponent(email)}`, {
+            method: "POST"
+          });
+          const result = await response.json();
+          if (response.ok) {
+            fetchActivities();
+          } else {
+            alert(result.detail || "No se pudo eliminar el participante.");
+          }
+        } catch (error) {
+          alert("Error al eliminar participante.");
+        }
+      }
+    }
+  });
 });
